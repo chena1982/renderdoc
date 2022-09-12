@@ -1,5 +1,8 @@
 #pragma once
 
+
+#include "../../api/replay/apidefs.h"
+#include "../../api/replay/rdcarray.h"
 #include <string>
 #include <vector>
 #include <string>
@@ -36,4 +39,8 @@ struct ParseParameters
 	std::string MatrixPos_ID1, MatrixPos_MUL1;
 };
 
-const std::string DecompileBinaryHLSL(ParseParameters &params, bool &patched, std::string &shaderModel, bool &errorOccurred);
+RENDERDOC_API std::string DecompileBinaryHLSL(ParseParameters &params, bool &patched,
+                                             std::string &shaderModel, bool &errorOccurred);
+
+
+RENDERDOC_API bytebuf Disassemble(const byte *dxbcCode, size_t size);

@@ -118,7 +118,10 @@ struct Declaration
             uint32_t ui32InterfaceID;
             uint32_t ui32NumFuncTables;
             uint32_t ui32ArraySize;
-        } interface;
+        };
+
+		Interface_TAG interface_tag;
+
     } value;
 
     struct UAV_TAG

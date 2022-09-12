@@ -579,6 +579,33 @@
     <ClInclude Include="common\result.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="data\hlsl\decode.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\DecompileHLSL.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\tokens.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\tokensDX9.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\structs.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\hlslcc.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\hlslcc.hpp">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\reflect.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
+    <ClInclude Include="data\hlsl\debug.h">
+      <Filter>Resources\hlsl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="maths\camera.cpp">
@@ -997,6 +1024,18 @@
     </ClCompile>
     <ClCompile Include="replay\dummy_driver.cpp">
       <Filter>Replay</Filter>
+    </ClCompile>
+    <ClCompile Include="data\hlsl\decode.cpp">
+      <Filter>Resources\hlsl</Filter>
+    </ClCompile>
+    <ClCompile Include="data\hlsl\decodeDX9.cpp">
+      <Filter>Resources\hlsl</Filter>
+    </ClCompile>
+    <ClCompile Include="data\hlsl\DecompileHLSL.cpp">
+      <Filter>Resources\hlsl</Filter>
+    </ClCompile>
+    <ClCompile Include="data\hlsl\reflect.cpp">
+      <Filter>Resources\hlsl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

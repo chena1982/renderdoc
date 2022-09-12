@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#include "../driver/dx/official/d3dcommon.h"
+
 #if defined (_WIN32) && defined(HLSLCC_DYNLIB)
     #define HLSLCC_APIENTRY __stdcall
     #if defined(libHLSLcc_EXPORTS)
@@ -96,16 +98,6 @@ typedef enum {
   INOUT_COMPONENT_FLOAT32  = 3
 } INOUT_COMPONENT_TYPE;
 
-typedef enum MIN_PRECISION { 
-  D3D_MIN_PRECISION_DEFAULT    = 0,
-  D3D_MIN_PRECISION_FLOAT_16   = 1,
-  D3D_MIN_PRECISION_FLOAT_2_8  = 2,
-  D3D_MIN_PRECISION_RESERVED   = 3,
-  D3D_MIN_PRECISION_SINT_16    = 4,
-  D3D_MIN_PRECISION_UINT_16    = 5,
-  D3D_MIN_PRECISION_ANY_16     = 0xf0,
-  D3D_MIN_PRECISION_ANY_10     = 0xf1
-} MIN_PRECISION;
 
 struct InOutSignature
 {
@@ -118,7 +110,7 @@ struct InOutSignature
     uint32_t ui32ReadWriteMask;
 
 	uint32_t ui32Stream;
-	MIN_PRECISION eMinPrec;
+    D3D_MIN_PRECISION eMinPrec;
 };
 
 typedef enum ResourceType_TAG

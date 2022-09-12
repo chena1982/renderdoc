@@ -60,7 +60,7 @@ static void ReadInputSignatures(const uint32_t* pui32Tokens,
         psCurrentSignature->ui32ReadWriteMask = (ui32ComponentMasks & 0x7F00) >> 8;
 
 		if(extended)
-			psCurrentSignature->eMinPrec = (MIN_PRECISION) *pui32Tokens++;
+			psCurrentSignature->eMinPrec = (D3D_MIN_PRECISION)*pui32Tokens++;
 
         ReadStringFromTokenStream((const uint32_t*)((const char*)pui32FirstSignatureToken+ui32SemanticNameOffset), psCurrentSignature->SemanticName);
     }
@@ -105,7 +105,7 @@ static void ReadOutputSignatures(const uint32_t* pui32Tokens,
         psCurrentSignature->ui32ReadWriteMask = (ui32ComponentMasks & 0x7F00) >> 8;
 
 		if(extended)
-			psCurrentSignature->eMinPrec = (MIN_PRECISION) *pui32Tokens++;
+			psCurrentSignature->eMinPrec = (D3D_MIN_PRECISION) *pui32Tokens++;
 
         ReadStringFromTokenStream((const uint32_t*)((const char*)pui32FirstSignatureToken+ui32SemanticNameOffset), psCurrentSignature->SemanticName);
     }

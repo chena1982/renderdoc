@@ -516,9 +516,9 @@ const uint32_t* DecodeDeclaration(Shader* psShader, const uint32_t* pui32Token, 
 
             ui32OperandOffset++;
 
-            psDecl->value.interface.ui32InterfaceID = interfaceID;
-            psDecl->value.interface.ui32NumFuncTables = numClassesImplementingThisInterface;
-            psDecl->value.interface.ui32ArraySize = arrayLen;
+            psDecl->value.interface_tag.ui32InterfaceID = interfaceID;
+            psDecl->value.interface_tag.ui32NumFuncTables = numClassesImplementingThisInterface;
+            psDecl->value.interface_tag.ui32ArraySize = arrayLen;
 
             psShader->funcPointer[interfaceID].ui32NumBodiesPerTable = psDecl->ui32TableLength;
 

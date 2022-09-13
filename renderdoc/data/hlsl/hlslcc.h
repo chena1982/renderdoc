@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <string>
 
 #include "../driver/dx/official/d3dcommon.h"
 

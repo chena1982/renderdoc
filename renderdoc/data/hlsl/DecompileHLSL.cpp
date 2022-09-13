@@ -1685,6 +1685,8 @@ public:
           // error parsing shader> 3 Error parsing buffer offset : icb[r6.z + 10].w
           // bufIndex : -1  bufOffset : 10
           // strPos : +10].w
+          replaceConstantBuffer(right);
+
           return;
         }
         if((i->second.bt == DT_float || i->second.bt == DT_uint || i->second.bt == DT_int) ||
@@ -1837,6 +1839,9 @@ public:
     else
       strcpy_s(right, opcodeSize,
                right2);    // All input params are 128 char arrays, like op1, op2, op3
+
+    replaceConstantBuffer(right);
+    replaceInput(right);
   }
 
   char statement[128], op1[opcodeSize], op2[opcodeSize], op3[opcodeSize], op4[opcodeSize],
@@ -2282,6 +2287,8 @@ public:
     char *pos = strchr(target, ',');
     if(pos)
       *pos = 0;
+
+    replaceOutput(target);
   }
 
   char *writeTarget(char *target)
@@ -2290,6 +2297,67 @@ public:
     if(i != mRemappedOutputRegisters.end())
       strcpy_s(target, opcodeSize, i->second.c_str());    // only used for opcode strings.
     return target;
+  }
+
+  void replaceInput(char * op)
+  {
+    int inputIndex = 0;
+    int number = sscanf_s(op, "v%d", &inputIndex);
+    if (number == 1)
+    {
+      char tempOp[opcodeSize];
+      char *component = strrchr(op, '.');
+      sprintf_s(tempOp, opcodeSize, "IN.param%d%s", inputIndex, component);
+      strcpy_s(op, opcodeSize, tempOp);
+      return;
+    }
+
+    number = sscanf_s(op, "-v%d", &inputIndex);
+    if (number == 1)
+    {
+      char tempOp[opcodeSize];
+      char *component = strrchr(op, '.');
+      sprintf_s(tempOp, opcodeSize, "-IN.param%d%s", inputIndex, component);
+      strcpy_s(op, opcodeSize, tempOp);
+    }
+  }
+
+  void replaceOutput(char *op)
+  {
+    int inputIndex = 0;
+    int number = sscanf_s(op, "o%d.", &inputIndex);
+    if(number == 1)
+    {
+      char tempOp[opcodeSize];
+      char *component = strrchr(op, '.');
+      sprintf_s(tempOp, opcodeSize, "OUT.Target%d%s", inputIndex, component);
+      strcpy_s(op, opcodeSize, tempOp);
+    }
+  }
+
+  void replaceConstantBuffer(char * op)
+  {
+    int bufIndex = 0;
+    int memberIndex = 0;
+    int number = sscanf_s(op, "cb%d[%d]", &bufIndex, &memberIndex);
+    if (number == 2)
+    {
+      char tempOp[opcodeSize];
+      char * component = strrchr(op, '.');
+      sprintf_s(tempOp, opcodeSize, "cb%d_v%d%s", bufIndex, memberIndex, component);
+      strcpy_s(op, opcodeSize, tempOp);
+
+      return;
+    }
+
+    number = sscanf_s(op, "-cb%d[%d]", &bufIndex, &memberIndex);
+    if (number == 2)
+    {
+      char tempOp[opcodeSize];
+      char *component = strrchr(op, '.');
+      sprintf_s(tempOp, opcodeSize, "-cb%d_v%d%s", bufIndex, memberIndex, component);
+      strcpy_s(op, opcodeSize, tempOp);
+    }
   }
 
   string ci(string input)
@@ -3527,12 +3595,12 @@ public:
             map<int, string>::iterator i = mSamplerNames.find(bufIndex);
             if(i == mSamplerNames.end())
             {
-              sprintf_s(buffer, 512, "s%d_s", bufIndex);
+              sprintf_s(buffer, 512, "sampler%d", bufIndex);
               mSamplerNames[bufIndex] = buffer;
               sprintf_s(buffer, 512, "SamplerState %s : register(s%d);\n\n",
                         mSamplerNames[bufIndex].c_str(), bufIndex);
-              mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
-              mCodeStartPos += strlen(buffer);
+              //mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+              //mCodeStartPos += strlen(buffer);
             }
           }
           else if(!strcmp(op2, "mode_comparison"))
@@ -3544,8 +3612,8 @@ public:
               mSamplerComparisonNames[bufIndex] = buffer;
               sprintf_s(buffer, 512, "SamplerComparisonState %s : register(s%d);\n\n",
                         mSamplerComparisonNames[bufIndex].c_str(), bufIndex);
-              mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
-              mCodeStartPos += strlen(buffer);
+              //mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+              //mCodeStartPos += strlen(buffer);
             }
           }
           else
@@ -3569,12 +3637,12 @@ public:
           map<int, string>::iterator i = mTextureNames.find(bufIndex);
           if(i == mTextureNames.end())
           {
-            sprintf_s(buffer, 512, "t%d", bufIndex);
+            sprintf_s(buffer, 512, "texture%d", bufIndex);
             mTextureNames[bufIndex] = buffer;
             mTextureType[bufIndex] = "Texture2D<float4>";
             sprintf_s(buffer, 512, "Texture2D<float4> t%d : register(t%d);\n\n", bufIndex, bufIndex);
-            mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
-            mCodeStartPos += strlen(buffer);
+            //mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+            //mCodeStartPos += strlen(buffer);
           }
         }
       }
@@ -3594,7 +3662,7 @@ public:
           map<int, string>::iterator i = mTextureNames.find(bufIndex);
           if(i == mTextureNames.end())
           {
-            sprintf_s(buffer, 512, "t%d", bufIndex);
+            sprintf_s(buffer, 512, "texture%d", bufIndex);
             mTextureNames[bufIndex] = buffer;
             mTextureType[bufIndex] = "Texture2DArray<float4>";
             sprintf_s(buffer, 512, "Texture2DArray<float4> t%d : register(t%d);\n\n", bufIndex,
@@ -3627,7 +3695,7 @@ public:
           map<int, string>::iterator i = mTextureNames.find(bufIndex);
           if(i == mTextureNames.end())
           {
-            sprintf_s(buffer, 512, "t%d", bufIndex);
+            sprintf_s(buffer, 512, "texture%d", bufIndex);
             mTextureNames[bufIndex] = buffer;
             mTextureType[bufIndex] = "Texture2DMS<float4>";
             if(dim == 0)
@@ -3655,7 +3723,7 @@ public:
           map<int, string>::iterator i = mTextureNames.find(bufIndex);
           if(i == mTextureNames.end())
           {
-            sprintf_s(buffer, 512, "t%d", bufIndex);
+            sprintf_s(buffer, 512, "texture%d", bufIndex);
             mTextureNames[bufIndex] = buffer;
             mTextureType[bufIndex] = "TextureCube<float4>";
             sprintf_s(buffer, 512, "TextureCube<float4> t%d : register(t%d);\n\n", bufIndex,
@@ -3679,7 +3747,7 @@ public:
           map<int, string>::iterator i = mTextureNames.find(bufIndex);
           if(i == mTextureNames.end())
           {
-            sprintf_s(buffer, 512, "t%d", bufIndex);
+            sprintf_s(buffer, 512, "texture%d", bufIndex);
             mTextureNames[bufIndex] = buffer;
             mTextureType[bufIndex] = "Buffer<float4>";
             sprintf_s(buffer, 512, "Buffer<float4> t%d : register(t%d);\n\n", bufIndex, bufIndex);
@@ -5349,7 +5417,11 @@ public:
             dst0 = "r" + std::to_string(instr->asOperands[0].ui32RegisterNumber);
             srcAddress = instr->asOperands[1].specialName;
             srcByteOffset = instr->asOperands[2].specialName;
-            src0 = shader->sInfo->psResourceBindings->Name;
+
+            if(shader->sInfo->psResourceBindings != NULL)
+            {
+              src0 = shader->sInfo->psResourceBindings->Name;
+            }
 
             sprintf_s(buffer, 512, "// Known bad code for instruction (needs manual fix):\n");
             appendOutput(buffer);
@@ -5622,7 +5694,7 @@ public:
 
           case OPCODE_RET:
             sprintf_s(buffer, 512, "  return;\n");
-            appendOutput(buffer);
+            //appendOutput(buffer);
             break;
 
             // Missing opcode needed for WatchDogs. Used as "retc_nz r0.x"
@@ -5632,7 +5704,7 @@ public:
               sprintf_s(buffer, 512, "  if (%s == 0) return;\n", ci(op1).c_str());
             else
               sprintf_s(buffer, 512, "  if (%s != 0) return;\n", ci(op1).c_str());
-            appendOutput(buffer);
+            //appendOutput(buffer);
             break;
 
           default: logDecompileError("Unknown statement: " + string(statement)); return;
@@ -5772,10 +5844,10 @@ string DecompileBinaryHLSL(ParseParameters &params, bool &patched, std::string &
     }
 
     d.ParseBufferDefinitions(shader, params.decompiled, params.decompiledSize);
-    d.WriteResourceDefinitions();
-    d.WriteAddOnDeclarations();
-    d.ParseInputSignature(params.decompiled, params.decompiledSize);
-    d.ParseOutputSignature(params.decompiled, params.decompiledSize);
+    //d.WriteResourceDefinitions();
+    //d.WriteAddOnDeclarations();
+    //d.ParseInputSignature(params.decompiled, params.decompiledSize);
+    //d.ParseOutputSignature(params.decompiled, params.decompiledSize);
     if(!params.ZeroOutput)
     {
       d.ParseCode(shader, params.decompiled, params.decompiledSize);
@@ -5785,7 +5857,7 @@ string DecompileBinaryHLSL(ParseParameters &params, bool &patched, std::string &
       d.ParseCodeOnlyShaderType(shader, params.decompiled, params.decompiledSize);
       d.WriteZeroOutputSignature(params.decompiled, params.decompiledSize);
     }
-    d.mOutput.push_back('}');
+    //d.mOutput.push_back('}');
     shaderModel = d.mShaderType;
     errorOccurred = d.mErrorOccurred;
     FreeShaderInfo(shader->sInfo);

@@ -958,6 +958,14 @@ QString PipelineStateViewer::GenerateHLSLStub(const ShaderBindpointMapping &bind
 
   bytebuf asmBuff = Disassemble(&shaderDetails->rawBytes[0], shaderDetails->rawBytes.size());
 
+  /*FILE *shaderFile = NULL;
+  errno_t error = fopen_s(&shaderFile, "D:/shader.txt", "wb");
+  if (error == 0)
+  {
+    fwrite(&asmBuff[0], asmBuff.size(), 1, shaderFile);
+    fclose(shaderFile);
+  }*/
+
   bool patched = false;
   std::string shaderModel;
   bool errorOccurred = false;
@@ -970,24 +978,23 @@ QString PipelineStateViewer::GenerateHLSLStub(const ShaderBindpointMapping &bind
 
   std::string decompiledCode = DecompileBinaryHLSL(p, patched, shaderModel, errorOccurred);
 
-  if (!decompiledCode.size())
-  {
-    //cout << "    error while decompiling.\n" << endl;
-  }
-
-
 
   hlsl += lit("OutputStruct %1(in InputStruct IN)\n"
           "{\n"
           "\tOutputStruct OUT = (OutputStruct)0;\n"
           "\n"
           "\t// ...\n"
-          "\n");
+          "\n").arg(entryFunc);
 
-  hlsl.push_back(QString::fromStdString(decompiledCode));
+  if (decompiledCode.size() > 0)
+  {
+    hlsl.push_back(QString::fromStdString(decompiledCode));
+  }
+
+
 
   hlsl += lit("\treturn OUT;\n"
-              "}\n").arg(entryFunc);
+              "}\n");
 
   return hlsl;
 }

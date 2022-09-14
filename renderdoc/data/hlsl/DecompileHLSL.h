@@ -40,7 +40,7 @@ struct ParseParameters
 };
 
 RENDERDOC_API std::string DecompileBinaryHLSL(ParseParameters &params, bool &patched,
-                                             std::string &shaderModel, bool &errorOccurred);
+                                             std::string &shaderModel, std::string & structDecl, bool &errorOccurred);
 
 
 RENDERDOC_API bytebuf Disassemble(const byte *dxbcCode, size_t size);

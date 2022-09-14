@@ -127,6 +127,7 @@ public:
   set<string> mBooleanRegisters;
 
   vector<char> mOutput;
+  string mStructOutput;
   size_t mCodeStartPos;    // Used as index into buffer, name misleadingly suggests pointer usage.
   bool mErrorOccurred;
   bool mFixSvPosition;
@@ -1685,6 +1686,16 @@ public:
           // error parsing shader> 3 Error parsing buffer offset : icb[r6.z + 10].w
           // bufIndex : -1  bufOffset : 10
           // strPos : +10].w
+
+          if(absolute && negative)
+            sprintf_s(right, opcodeSize, "-abs(%s)", right2);
+          else if(absolute)
+            sprintf_s(right, opcodeSize, "abs(%s)", right2);
+          else if(negative)
+            sprintf_s(right, opcodeSize, "-%s", right2);
+          else
+            strcpy_s(right, opcodeSize, right2);
+
           replaceConstantBuffer(right);
 
           return;
@@ -2257,7 +2268,22 @@ public:
   void truncateTextureLoadPos(char *op, const char *textype)
   {
     if(!strncmp(op, "float", 5))
+    {
+      float value[4];
+      int number = sscanf_s(op, "float4(%f,%f,%f,%f)", &value[0], &value[1], &value[2], &value[3]);
+      if(number == 0)
+        return;
+      
+      if (!strncmp(textype, "Texture2D<", strlen("Texture2D<")))
+      {
+          char buffer[128];
+          sprintf_s(buffer, 128, "float3(%f,%f,%f)", value[0], value[1], value[2]);
+          strcpy_s(op, opcodeSize, buffer);
+      }
+
       return;
+    }
+
 
     int pos = 5;
     if(!strncmp(textype, "Buffer<", strlen("Buffer<")))
@@ -2281,6 +2307,7 @@ public:
     char *cpos = strrchr(op, '.');
     cpos[pos] = 0;
   }
+
 
   void remapTarget(char *target)
   {
@@ -3608,7 +3635,7 @@ public:
             map<int, string>::iterator i = mSamplerComparisonNames.find(bufIndex);
             if(i == mSamplerComparisonNames.end())
             {
-              sprintf_s(buffer, 512, "s%d_s", bufIndex);
+              sprintf_s(buffer, 512, "sampler%d", bufIndex);
               mSamplerComparisonNames[bufIndex] = buffer;
               sprintf_s(buffer, 512, "SamplerComparisonState %s : register(s%d);\n\n",
                         mSamplerComparisonNames[bufIndex].c_str(), bufIndex);
@@ -3667,8 +3694,8 @@ public:
             mTextureType[bufIndex] = "Texture2DArray<float4>";
             sprintf_s(buffer, 512, "Texture2DArray<float4> t%d : register(t%d);\n\n", bufIndex,
                       bufIndex);
-            mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
-            mCodeStartPos += strlen(buffer);
+            //mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+            //mCodeStartPos += strlen(buffer);
           }
         }
       }
@@ -3704,8 +3731,8 @@ public:
             else
               sprintf_s(buffer, 512, "Texture2DMS<float4,%d> t%d : register(t%d);\n\n", dim,
                         bufIndex, bufIndex);
-            mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
-            mCodeStartPos += strlen(buffer);
+            //mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+            //mCodeStartPos += strlen(buffer);
           }
         }
       }
@@ -3728,8 +3755,67 @@ public:
             mTextureType[bufIndex] = "TextureCube<float4>";
             sprintf_s(buffer, 512, "TextureCube<float4> t%d : register(t%d);\n\n", bufIndex,
                       bufIndex);
-            mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
-            mCodeStartPos += strlen(buffer);
+            //mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+            //mCodeStartPos += strlen(buffer);
+          }
+        }
+      }
+      else if(!strcmp(statement, "dcl_resource_texture3d"))
+      {
+        if(op2[0] == 't')
+        {
+          int bufIndex = 0;
+          if(sscanf_s(op2 + 1, "%d", &bufIndex) != 1)
+          {
+            logDecompileError("Error parsing texture register index: " + string(op2));
+            return;
+          }
+          // Create if not existing.  e.g. if no ResourceBinding section in ASM.
+          map<int, string>::iterator i = mTextureNames.find(bufIndex);
+          if(i == mTextureNames.end())
+          {
+            sprintf_s(buffer, 512, "texture%d", bufIndex);
+            mTextureNames[bufIndex] = buffer;
+
+            if(!strcmp(op1, "(uint,uint,uint,uint)"))
+            {
+              mTextureType[bufIndex] = "Texture3D<uint4>";
+              sprintf_s(buffer, 512, "Texture3D<uint4> t%d : register(t%d);\n\n", bufIndex,
+                        bufIndex);
+            }
+            else if(!strcmp(op1, "(float,float,float,float)"))
+            {
+              mTextureType[bufIndex] = "Texture3D<float4>";
+              sprintf_s(buffer, 512, "Texture3D<float4> t%d : register(t%d);\n\n", bufIndex,
+                        bufIndex);
+            }
+            // mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+            // mCodeStartPos += strlen(buffer);
+          }
+        }              
+      }
+      else if(!strcmp(statement, "dcl_resource_texturecubearray"))
+      {
+        if(op2[0] == 't')
+        {
+          int bufIndex = 0;
+          if(sscanf_s(op2 + 1, "%d", &bufIndex) != 1)
+          {
+            logDecompileError("Error parsing texture register index: " + string(op2));
+            return;
+          }
+          // Create if not existing.  e.g. if no ResourceBinding section in ASM.
+          map<int, string>::iterator i = mTextureNames.find(bufIndex);
+          if(i == mTextureNames.end())
+          {
+            sprintf_s(buffer, 512, "texture%d", bufIndex);
+            mTextureNames[bufIndex] = buffer;
+
+            mTextureType[bufIndex] = "TextureCubeArray<float4>";
+            sprintf_s(buffer, 512, "TextureCubeArray<float4> t%d : register(t%d);\n\n", bufIndex, bufIndex);
+
+            // mOutput.insert(mOutput.begin(), buffer, buffer + strlen(buffer));
+            // mCodeStartPos += strlen(buffer);
           }
         }
       }
@@ -3755,6 +3841,61 @@ public:
             mCodeStartPos += strlen(buffer);
           }
         }
+      }
+      else if(!strcmp(statement, "dcl_resource_structured"))
+      {
+        if(op1[0] == 't')
+        {
+          int bufIndex = 0;
+          if(sscanf_s(op1, "t%d", &bufIndex) != 1)
+          {
+            logDecompileError("Error parsing struct register index: %s" + string(op1));
+            return;
+          }
+
+          int bufSize = 0;
+          if(sscanf_s(op2, "%d", &bufSize) != 1)
+          {
+            logDecompileError("Error parsing struct size: %s" + string(op2));
+            return;
+          }
+
+          if(bufSize > 4)
+          {
+            sprintf_s(buffer, 512, "struct Struct%d {\n", bufIndex);
+            mStructOutput += buffer;
+
+            for(int j = 0; j < bufSize / 16; j++)
+            {
+              sprintf_s(buffer, 512, "float4 data%d;\n", j);
+              mStructOutput += buffer;
+            }
+
+            if((bufSize & 0xF) != 0)
+            {
+              int varCount = (bufSize - (bufSize / 16) * 16) / 4;
+              for(int k = 0; k < varCount; k++)
+              {
+                sprintf_s(buffer, 512, "float data%d;\n", bufSize / 16 + k);
+                mStructOutput += buffer;
+              }
+            }
+
+            mStructOutput += "};\n\n";
+
+            sprintf_s(buffer, 512,
+                      "StructuredBuffer<Struct%d> structuredbuffer%d: register(t%d); \n\n",
+                      bufIndex, bufIndex, bufIndex);
+            mStructOutput += buffer;
+          }
+          else
+          {
+            sprintf_s(buffer, 512,
+                      "Buffer<float4> structuredbuffer%d: register(t%d); \n\n",
+                      bufIndex, bufIndex);
+            mStructOutput += buffer;
+          }
+        }        
       }
       else if(!strcmp(statement, "{"))
       {
@@ -5335,6 +5476,9 @@ public:
             int textureId;
             sscanf_s(op3, "t%d.", &textureId);
             truncateTextureLoadPos(op2, mTextureType[textureId].c_str());
+
+
+
             if(!instr->bAddressOffset)
               sprintf_s(buffer, 512, "  %s = %s.Load(%s)%s;\n", writeTarget(op1),
                         mTextureNames[textureId].c_str(), ci(op2).c_str(), strrchr(op3, '.'));
@@ -5431,30 +5575,42 @@ public:
             sprintf_s(buffer, 512, "// %s\n", line.c_str());
             appendOutput(buffer);
 
-            // ASSERT(instr->asOperands[0].eSelMode == OPERAND_4_COMPONENT_MASK_MODE);
+            int bufIndex;
+            sscanf_s(op5, "t%d", &bufIndex);
 
-            // Output one line for each swizzle in dst0.xyzw that is active.
-            for(int component = 0; component < 4; component++)
+            int bufSize;
+            sscanf_s(op1, "stride=%d", &bufSize);
+
+            int offset;
+            sscanf_s(op4, "l(%d)", &offset);
+
+            remapTarget(op2);
+            remapTarget(op3);
+
+            int dataIndex = offset / 16;
+            if((bufSize & 0xF) != 0)
             {
-              if(instr->asOperands[0].ui32CompMask & (1 << component))
-              {
-                switch(component)
-                {
-                  case 3: swiz = "w"; break;
-                  case 2: swiz = "z"; break;
-                  case 1: swiz = "y"; break;
-                  case 0:
-                  default: swiz = "x"; break;
-                }
-                // sprintf_s(buffer, 512, "%s.%s = %s[%s].%s.%s;\n", dst0.c_str(), swiz.c_str(),
-                //	src0.c_str(), srcAddress.c_str(), srcByteOffset.c_str(), swiz.c_str());
-                sprintf_s(
-                    buffer, 512,
-                    "%s.%s = StructuredBufferName[srcAddressRegister].srcByteOffsetName.swiz;\n",
-                    dst0.c_str(), swiz.c_str());
-                appendOutput(buffer);
-              }
+              dataIndex = offset / 4;
             }
+
+            applySwizzle(op2, op5);
+
+            swiz = op5;
+            size_t swizPos = swiz.find('.');
+            swiz = swiz.substr(swizPos, swiz.size() - swizPos);
+
+            if(bufSize < 16)
+            {
+              sprintf_s(buffer, 512, "%s = structuredbuffer%d[%s]%s;\n", op2, bufIndex, op3, swiz.c_str());            
+            }
+            else
+            {
+              sprintf_s(buffer, 512, "%s = structuredbuffer%d[%s].data%d%s;\n", op2, bufIndex, op3,
+                        dataIndex, swiz.c_str());            
+            }
+
+            appendOutput(buffer);
+
             removeBoolean(op1);
             break;
           }
@@ -5785,7 +5941,7 @@ public:
 };
 
 string DecompileBinaryHLSL(ParseParameters &params, bool &patched, std::string &shaderModel,
-                           bool &errorOccurred)
+                           std::string &structDecl, bool &errorOccurred)
 {
   Decompiler d;
 
@@ -5851,6 +6007,7 @@ string DecompileBinaryHLSL(ParseParameters &params, bool &patched, std::string &
     if(!params.ZeroOutput)
     {
       d.ParseCode(shader, params.decompiled, params.decompiledSize);
+      structDecl = d.mStructOutput;
     }
     else
     {

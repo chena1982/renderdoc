@@ -884,17 +884,43 @@ QString PipelineStateViewer::GenerateHLSLStub(const ShaderBindpointMapping &bind
       }
       else
       {
-        if(res.variableType.rows > 1)
+        /*if(res.variableType.rows > 1)
           hlsl += lit("Structured");
 
         hlsl += lit("Buffer<%1> %2 : register(%3%4);\n")
                     .arg(res.variableType.name)
                     .arg(res.name)
                     .arg(QLatin1Char(regChar))
-                    .arg(reg);
+                    .arg(reg);*/
       }
     }
   }
+
+  bytebuf asmBuff = Disassemble(&shaderDetails->rawBytes[0], shaderDetails->rawBytes.size());
+
+  /*FILE *shaderFile = NULL;
+  errno_t error = fopen_s(&shaderFile, "D:/shader.txt", "wb");
+  if (error == 0)
+  {
+    fwrite(&asmBuff[0], asmBuff.size(), 1, shaderFile);
+    fclose(shaderFile);
+  }*/
+
+  bool patched = false;
+  std::string shaderModel;
+  bool errorOccurred = false;
+
+  // Set all to zero, so we only init the ones we are using here.
+  ParseParameters p = {};
+  p.bytecode = &shaderDetails->rawBytes[0];
+  p.decompiled = (const char *)&asmBuff[0];
+  p.decompiledSize = asmBuff.size();
+
+  std::string structDecl;
+  std::string decompiledCode =
+      DecompileBinaryHLSL(p, patched, shaderModel, structDecl, errorOccurred);
+
+  hlsl.push_back(QString::fromStdString(structDecl));
 
   hlsl += lit("\n\n");
 
@@ -954,29 +980,6 @@ QString PipelineStateViewer::GenerateHLSLStub(const ShaderBindpointMapping &bind
 
   hlsl += lit("};\n\n");
 
-
-
-  bytebuf asmBuff = Disassemble(&shaderDetails->rawBytes[0], shaderDetails->rawBytes.size());
-
-  /*FILE *shaderFile = NULL;
-  errno_t error = fopen_s(&shaderFile, "D:/shader.txt", "wb");
-  if (error == 0)
-  {
-    fwrite(&asmBuff[0], asmBuff.size(), 1, shaderFile);
-    fclose(shaderFile);
-  }*/
-
-  bool patched = false;
-  std::string shaderModel;
-  bool errorOccurred = false;
-
-  // Set all to zero, so we only init the ones we are using here.
-  ParseParameters p = {};
-  p.bytecode = &shaderDetails->rawBytes[0];
-  p.decompiled = (const char *)&asmBuff[0];
-  p.decompiledSize = asmBuff.size();
-
-  std::string decompiledCode = DecompileBinaryHLSL(p, patched, shaderModel, errorOccurred);
 
 
   hlsl += lit("OutputStruct %1(in InputStruct IN)\n"

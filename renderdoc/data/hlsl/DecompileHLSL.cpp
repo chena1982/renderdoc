@@ -2357,7 +2357,16 @@ public:
     {
       char tempOp[opcodeSize];
       char *component = strrchr(op, '.');
-      sprintf_s(tempOp, opcodeSize, "OUT.Target%d%s", inputIndex, component);
+
+      if(!strncmp(mShaderType.c_str(), "ps_", 3))
+      {
+        sprintf_s(tempOp, opcodeSize, "OUT.Target%d%s", inputIndex, component);      
+      }
+      else if(!strncmp(mShaderType.c_str(), "vs_", 3))
+      {
+        sprintf_s(tempOp, opcodeSize, "OUT.param%d%s", inputIndex, component);    
+      }
+
       strcpy_s(op, opcodeSize, tempOp);
     }
   }
